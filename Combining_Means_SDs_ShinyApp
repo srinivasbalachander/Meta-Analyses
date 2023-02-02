@@ -1,0 +1,86 @@
+
+# This is a Shiny web application. You can run the application by copying the code into R (or RStudio) and hitting  'Run' 
+
+library(shiny)
+
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+
+    # Application title
+    titlePanel("Combining Means and SDs from two independent groups, for a meta-analysis"),
+    
+    # Sidebar with a slider input for number of bins 
+    sidebarLayout(
+        sidebarPanel(
+         numericInput("M1", "Mean in Group 1", 0),
+         numericInput("SD1", "SD in Group 1", 0),
+         numericInput("N1", "N in Group 1",0),
+         numericInput("M2", "Mean in Group 2", 0),
+         numericInput("SD2", "SD in Group 2", 0),
+         numericInput("N2", "N in Group 2",0)
+        ),
+
+        # Show a plot of the generated distribution
+        mainPanel(
+          h2("Here are the results! "),
+          h2("\n\n"),
+          h4("Pooled Mean = "), 
+           verbatimTextOutput("Pooled_Mean", placeholder = TRUE),
+          h2("                "),
+           h4("Pooled SD = "),
+           verbatimTextOutput("Pooled_SD", placeholder = TRUE),
+          h2("                "),
+           h4("Pooled N = "),
+           verbatimTextOutput("Pooled_N", placeholder = TRUE),
+           
+           
+           hr(),
+           tags$a(href = "https://handbook-5-1.cochrane.org/chapter_7/table_7_7_a_formulae_for_combining_groups.htm", 
+                       "Source: Cochrane Handbook Reference Formulae for Combining Groups", target = "_blank"),
+           
+          h2("\n\n"),
+          h2("\n\n"),
+          h2("\n\n"),
+          hr(),
+          
+          print("~ Coded by Srinivas Balachander, NIMHANS, Bangalore (srinibalachander@gmail.com) ~")
+        )
+    )
+)
+
+# Define the functions to calculate the Pooled Mean and SDs
+
+func.Pooled_N = function(N1,N2) {
+                      return(N1 + N2)
+                      }
+
+func.Pooled_Mean = function(M1, M2, N1, N2){ 
+                      return((N1*M1 + N2*M2)/(N1 + N2))
+                      }
+
+func.Pooled_SD = function(N1, N2, M1, M2, SD1, SD2){
+                      Num1 =  (N1 - 1)*(SD1^2) + (N2 - 1)*(SD2^2) 
+                      Num2 =   ((N1*N2)/(N1 + N2)) * (M1^2 + M2^2 - 2*M1*M2)
+                      return(sqrt((Num1 + Num2)/ (N1 + N2 - 1)))
+                      }  
+
+# Define server logic required apply the above formulas to the entered data
+server <- function(input, output) {
+    output$Pooled_Mean <- renderText({func.Pooled_Mean(input$M1, 
+                                                       input$M2,
+                                                       input$N1,
+                                                       input$N2)})
+    
+    output$Pooled_SD <- renderText({func.Pooled_SD(input$M1, 
+                                                   input$M2,
+                                                   input$N1,
+                                                   input$N2,
+                                                   input$SD1,
+                                                   input$SD2)})
+    
+    output$Pooled_N <- renderText({func.Pooled_N(input$N1,
+                                                 input$N2)})
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
