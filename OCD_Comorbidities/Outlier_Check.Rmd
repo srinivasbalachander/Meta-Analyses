@@ -1,0 +1,105 @@
+---
+title: "OCD Comorbidity Meta-analysis: Across the Lifespan"
+author: "Sharma E et al"
+date: "26/07/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r packages, include=FALSE}
+library(dplyr)
+library(kableExtra)
+library(metafor)
+library(meta)
+library(weightr)
+```
+
+
+```{r input, include=FALSE}
+
+df <- read.csv("Eesha OCD Comorb.csv")
+
+df2 <- df %>% filter(Recruitment_Type != "Community") %>% select(StudyID, Country, Design, Total_N, Age_Mean, Age_Group, AAO_Mean, YBOCST_Mean, Instrument, 29:218)  # Select only the important columns
+
+df2$Age_Group <- factor(df2$Age_Group, levels = c("Pediatric", "Adult"))
+
+df.var <- read.csv("Var_Names.csv") # this is a file with better labels for each disorder
+df.var$No <- 1:nrow(df.var)
+
+df.var2 <- read.csv("Var_Included.csv") # file with labels for only the disorders we're analyzing now
+df.var2$No <- 1:nrow(df.var2)
+
+v1 <- sapply(df.var$Var, as.character) # a character vector, useful for running for loops
+v2 <- sapply(df.var2$Var, as.character)
+
+```
+
+```{r QCfunc, include=F}
+
+# A function to make Influence Plots, Baujat Plots and display studies identified as "bad influencers"
+
+QCfunc2 <- function(x) {temp <- df2  %>% select(StudyID, Country, Total_N, Age_Mean, AAO_Mean, YBOCST_Mean, Age_Group, x)
+                       temp <- temp %>% filter(!is.na(get(x)))
+                       writeLines(paste0("-----------------------------------------", "\n"))
+                          if (nrow(temp) >4) {
+                            ies.darc <- escalc(xi = get(x), ni = Total_N, measure = "PFT", data=temp)  
+                            pes.darc <- rma(yi, vi, data=ies.darc, method="DL", weighted=TRUE)   
+                            pes2 <- predict(pes.darc, transf = transf.ipft.hm, targs=list(ni=temp$Total_N),  digits=5)
+                            infp <- influence(pes.darc)
+                            cat(paste0("<h3>" ,"Suppl Figure 1.", df.var2[df.var2$Var == x, "No"]," QC Plots for ",
+                                            df.var2[df.var2$Var == x, "Proper_Name"], "</h3>"))
+                            writeLines(paste0("-------------------------------------------------------------------------", "\n"))
+                            cat("<h4> Consider excluding the following study(s), based on the Baujat & Influence Plots:    ")
+                            if(sum(infp$is.infl) <1) {cat("None", "</h4>")} else {cat(as.character(temp[infp$is.infl,"StudyID"]), "</h4>")}
+                            cat("\n")
+                            writeLines(paste0("-------------------------------------------------------------------------", "\n"))
+
+                            cat("<h4> Baujat Plot </h4>")
+                            meta::baujat(pes.darc)
+                            cat("\n")
+                            cat("<h4> Influence Plots </h4>")
+                          
+                            plot(infp)
+                            writeLines(paste0("<h4>----------------------------------------------------------------------------</h4>", "\n"))
+                            cat("\n")
+                            } else {
+                                              writeLines(paste0("Less than 5 studies here, no meta-analysis, no QC plots!", "\n"))
+                                              writeLines(paste0("-----------------------------------------", "\n"))
+                                              cat("\n")}
+                            }
+
+
+
+```
+
+
+``` {r dummy, include=FALSE}
+# This is just a dummy piece of code to take care of some annoying error messages!
+QCfunc2("Any_AxisI_Life")
+
+```
+
+
+# ------------------------------------------------------------------------------------------
+
+# Quality Check (QC) for each disorder
+
+### ----------------------------------------------------------------------------------------
+
+The numbers in the Baujat plots indicate the Study No in the corresponding table for the particular co-morbidity in Supplementary File 1.
+
+\n
+
+Studies marked in red in the influence plots indicate outliers that significantly influence the pooled estimate and are excluded from the final analysis.
+\n
+
+### ----------------------------------------------------------------------------------------
+
+``` {r QCs, results='asis', R.options = list(width = 100)}
+
+for (i in v2) {QCfunc2(i)}
+
+```
