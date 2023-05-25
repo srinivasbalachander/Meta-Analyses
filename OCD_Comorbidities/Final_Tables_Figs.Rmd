@@ -1,0 +1,389 @@
+---
+title: "OCD Comorbidity Meta-analysis: Across the Lifespan"
+author: "Eesha et al"
+date: "26/07/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r packages, include=FALSE}
+library(dplyr)
+library(kableExtra)
+library(metafor)
+library(meta)
+library(weightr)
+```
+
+
+```{r input, include=FALSE}
+
+df <- read.csv("Eesha OCD Comorb.csv")
+
+df2 <- df %>% filter(Recruitment_Type != "Community") %>% select(StudyID, Country, Design, Total_N, Age_Mean, Age_Group, AAO_Mean, Gender_Male_Perc, YBOCST_Mean, Instrument, 29:218)  # Select only the important columns
+
+df2$Age_Group <- factor(df2$Age_Group, levels = c("Pediatric", "Adult"))
+
+df.var <- read.csv("Var_Names.csv") # this is a file with better labels for each disorder
+df.var$No <- 1:nrow(df.var)
+
+df.var2 <- read.csv("Var_Included.csv")
+df.var2$No <- 1:nrow(df.var2)
+
+v1 <- sapply(df.var$Var, as.character) # a character vector, useful for running for loops
+v2 <- sapply(df.var2$Var, as.character)
+
+```
+
+
+```{r tablfunc, echo=F}
+
+# My final masterpiece: A customized function for making tables, with descriptives and summaries!!
+
+df3 <- data.frame(matrix(nrow=1, ncol=5))
+colnames(df3) <- c("Comorbidity", "K_Samples", "K_Ped_Samples", "N_OCD", "N_Comorb")
+
+df4 <- data.frame(matrix(nrow=1, ncol=8))
+colnames(df4) <- c("Comorbidity", "Total_Pooled_Prevalence", "TPP_LCI", "TPP_UCI", "TPP_LPI", "TPP_UPI",
+                   "I2", "I2_Pval")
+
+df5 <- data.frame(matrix(nrow=1, ncol=11))
+colnames(df5) <- c("Comorbidity", "Adult_PP", "APP_LCI", "APP_UCI", "Ped_PP", "PPP_LCI", "PPP_UCI",
+                   "R2", "QE_P", "I2Mod", "QM_Pval")
+
+for (x in v2) { temp <- df2  %>% select(StudyID, Country, Total_N, Age_Mean, AAO_Mean, YBOCST_Mean, Age_Group, x)
+                temp <- temp %>% filter(!is.na(get(x)))
+                if(nrow(temp) == 0) {temp2 <- c(x, 0, 0, 0, 0)} else {
+                temp2 <-c(as.character(df.var2[df.var2$Var == x, "Proper_Name"]), nrow(temp), nrow(temp[temp$Age_Group == "Pediatric",]), 
+                            sum(temp$Total_N), sum(select(temp, x)))}
+                df3 <- rbind(df3, temp2) %>% filter(!is.na(Comorbidity))
+                if(nrow(temp) < 5) {temp3 <- c(as.character(df.var2[df.var2$Var == x, "Proper_Name"]), "", "", "", "", "", "", "")} else 
+                  {
+                # Do the first RMA to figure out out-liers
+                ies.darc <- escalc(xi = get(x), ni = Total_N, measure = "PFT", data=temp)
+                pes.darc <- rma(yi, vi, data=ies.darc, method="DL", weighted=TRUE)
+                pes = predict(pes.darc, transf = transf.ipft.hm, targs=list(ni=temp$Total_N), digits=5)
+                infp <- influence(pes.darc)
+                # The RMA without the outliers
+                ies.darc2 <- escalc(xi = get(x), ni = Total_N, measure = "PFT", data=temp[!infp$is.infl,] )
+                pes.darc2 <- rma(yi, vi, data=ies.darc2, method="DL", weighted=TRUE)
+                pes2 = predict(pes.darc2, transf = transf.ipft.hm, targs=list(ni=temp$Total_N), digits=5)
+                temp3 <- c(as.character(df.var2[df.var2$Var == x, "Proper_Name"]), 
+                                             pes2$pred*100, pes2$ci.lb*100, pes2$ci.ub*100, 
+                                             pes2$cr.lb*100, pes2$cr.ub*100,
+                                             pes.darc2$I2, pes.darc2$QEp)}
+                df4 <- rbind(df4, temp3) %>% filter(!is.na(Comorbidity))
+    
+                if(nrow(temp[temp$Age_Group == "Pediatric",]) > 2  & nrow(temp[temp$Age_Group == "Adult",]) > 2 ) 
+                { # Do the RMA in sub-groups
+                  pes.darc2.adult <- rma(yi,vi, data = ies.darc2, subset=Age_Group=="Adult", method="DL")
+                  pes.darc2.ped <- rma(yi,vi, data = ies.darc2, subset=Age_Group=="Pediatric", method="DL")
+                  pes2.adult <- predict(pes.darc2.adult,transf = transf.ipft.hm, targs=list(ni=temp$Total_N), digits=5)
+                  pes2.ped <- predict(pes.darc2.ped, transf = transf.ipft.hm, targs=list(ni=temp$Total_N), digits=5)
+                  subganal.age <- rma(yi,vi, data=ies.darc2, mods = ~Age_Group, method="REML")
+                  temp4 <- c(as.character(df.var2[df.var2$Var == x, "Proper_Name"]), 
+                                pes2.adult$pred*100, pes2.adult$ci.lb*100, pes2.adult$ci.ub*100,
+                                pes2.ped$pred*100, pes2.ped$ci.lb*100, pes2.ped$ci.ub*100,
+                                subganal.age$R2, subganal.age$QEp, subganal.age$I2, subganal.age$QMp)
+                  } else if(nrow(temp[temp$Age_Group == "Pediatric",]) > 2)  
+                  {pes.darc2.ped <- rma(yi,vi, data = ies.darc2, subset=Age_Group=="Pediatric", method="DL")
+                  pes2.ped <- predict(pes.darc2.ped, transf = transf.ipft.hm, targs=list(ni=temp$Total_N), digits=5)
+                  temp4 <- c(as.character(df.var2[df.var2$Var == x, "Proper_Name"]), 
+                                "-", "-", "-",
+                                pes2.ped$pred*100, pes2.ped$ci.lb*100, pes2.ped$ci.ub*100,
+                                "-", "-", "-", "-") 
+                  } else {
+                    pes.darc2.adult <- rma(yi,vi, data = ies.darc2, subset=Age_Group=="Adult", method="DL")
+                  pes2.adult <- predict(pes.darc2.adult,transf = transf.ipft.hm, targs=list(ni=temp$Total_N), digits=5)
+                  temp4 <- c(as.character(df.var2[df.var2$Var == x, "Proper_Name"]), 
+                                pes2.adult$pred*100, pes2.adult$ci.lb*100, pes2.adult$ci.ub*100,
+                                "-", "-", "-", "-", "-", "-", "-")} 
+
+                df5 <- rbind(df5, temp4)
+                }
+
+
+round2 <- function(x) {round(x, digits=3)} #Make a small function to round off digits
+
+df3[,2:ncol(df3)] <- data.frame(lapply(df3[,2:ncol(df3)], function(x) {as.numeric(x) %>% round2}))  
+df4[,2:ncol(df4)] <- data.frame(lapply(df4[,2:ncol(df4)], function(x) {as.numeric(x) %>% round2}))
+df5[,2:ncol(df5)] <- data.frame(lapply(df5[,2:ncol(df5)], function(x) {as.numeric(x) %>% round2}))
+df5 <- df5[!(is.na(df5$Adult_PP)),]
+```
+
+```{r tablfunc2, results='asis', R.options = list(width = 100)}
+
+writeLines(paste0("<h3> ------------------------------------------------------------------------------------ </h3>"))
+cat("\n")
+cat("\n")
+writeLines("<h3> Table 1. Number of studies and total sample sizes for each disorder </h3>")
+cat("\n")
+print(df3  %>% kable(align= 'c', padding=4) %>% kable_styling(full_width = T))
+cat("\n")
+cat("\n")
+writeLines(paste0("<h3> ------------------------------------------------------------------------- </h3>"))
+
+writeLines("<h3> Table 2. Pooled Prevalence estimates in the total sample for each disorder </h3>")
+cat("\n")
+print(df4  %>% kable(align= 'c', padding=4) %>% kable_styling(full_width = T))
+cat("\n")
+cat("\n")
+writeLines(paste0("<h3> -------------------------------------------------------------------------------- </h3>"))
+
+writeLines("<h3> Table 3. Moderator/Sub-group analysis (Adult vs Pediatric samples) for each disorder </h3>")
+cat("\n")
+print(df5  %>% kable(align= 'c', padding=4) %>% kable_styling(full_width = T))
+cat("\n")
+cat("\n")
+writeLines(paste0("<h3> ------------------------------------------------------------------------------- </h3>"))
+
+```
+
+
+```{r figures, fig_width = 15, fig.height=8, results='asis', R.options = list(width = 100)}
+library(ggplot2)
+library(forcats)
+
+df4$Comorbidity <- factor(df4$Comorbidity, levels = unique(df4$Comorbidity) )
+
+df4.1 <- merge(df4, df.var2[,c("Proper_Name", "Category")], by.x="Comorbidity", by.y="Proper_Name")
+
+writeLines("<h3> Figure 2. Pooled prevalence rates by comorbidity </h3>")
+
+
+ggplot(data=df4.1, aes(x=fct_rev(Comorbidity), y=Total_Pooled_Prevalence)) + 
+  geom_bar(stat="identity", color="black", aes(fill=Category)) + 
+  geom_errorbar(aes(ymin=Total_Pooled_Prevalence, ymax=TPP_UCI), width=0.3) + 
+  scale_x_discrete(name= "Comorbidity (Lifetime)" ) + 
+  scale_y_continuous(name= "Total Pooled Prevalence (%)") +
+  scale_fill_brewer(palette="Pastel1") +
+  coord_flip() + theme(legend.position="none")
+
+
+df5$Comorbidity <- factor(df5$Comorbidity, levels = unique(df5$Comorbidity) )
+df5.1 <- merge(df5, df.var2[,c("Proper_Name", "Category")], by.x="Comorbidity", by.y="Proper_Name")
+df5.1 <- reshape(df5.1[,c(1:7,12)],  idvar= "Comorbidity", 
+        varying=list(c("Adult_PP", "Ped_PP"),  c("APP_LCI","PPP_LCI"), c("APP_UCI","PPP_UCI" )), 
+        v.names=c("PP", "LCI", "UCI"),
+        timevar = "Age_Group", times = c("Adult", "Pediatric"),
+        direction="long")
+df5.1$Age_Group <- factor(df5.1$Age_Group, levels= c("Pediatric", "Adult"), 
+                                          labels = c("Pediatric OCD Samples", "Adult OCD Samples"))
+
+rownames(df5.1) <- NULL
+
+df5.1$Comorbidity <-factor(df5.1$Comorbidity, levels = unique(df.var2$Proper_Name))
+
+df5.2 <- df5.1[df5.1$Comorbidity %in% df3[df3$K_Ped_Samples >4,]$Comorbidity,]
+
+writeLines(paste0("<h3> ------------------------------------------------------------------------------- </h3>"))
+
+writeLines("<h3> Figure 3. Pooled prevalence rates by comorbidity in adult and pediatric sub-groups </h3>")
+
+ggplot(df5.2, aes(x=fct_rev(Comorbidity), y=PP, group=Age_Group)) + 
+  geom_bar(stat="identity", color="black", aes(fill=Age_Group), position = position_dodge()) + 
+  geom_errorbar(aes(ymin=PP, ymax=UCI), position = position_dodge()) +
+  scale_x_discrete(name= "Comorbidity (Lifetime)" ) + 
+  scale_y_continuous(name= "Pooled Prevalence (%)") +
+  scale_fill_brewer(palette="Purples") + 
+  coord_flip() + 
+  theme_light() +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank()) +
+  guides(fill=guide_legend("Study Age Group")) 
+
+writeLines(paste0("<h3> ------------------------------------------------------------------------------- </h3>"))
+
+
+```
+
+
+
+```{r metaregs, include=FALSE}
+
+# Meta-regression plots for the main paper
+
+df.metareg.age <- data.frame(matrix(nrow=1, ncol=7))
+df.metareg.aao <- data.frame(matrix(nrow=1, ncol=7))
+df.metareg.ybocs <- data.frame(matrix(nrow=1, ncol=7))
+df.metareg.sex <- data.frame(matrix(nrow=1, ncol=7))
+
+colnames(df.metareg.age) <- c("Comorbidity", "Age_Mean", "pred", "ci.lb","ci.ub","cr.lb","cr.ub")
+colnames(df.metareg.aao) <- c("Comorbidity", "AAO_Mean", "pred", "ci.lb","ci.ub","cr.lb","cr.ub")
+colnames(df.metareg.ybocs) <- c("Comorbidity", "YBOCS_Mean", "pred", "ci.lb","ci.ub","cr.lb","cr.ub")
+colnames(df.metareg.sex) <- c("Comorbidity", "Male_Perc", "pred", "ci.lb","ci.ub","cr.lb","cr.ub")
+  
+for(x in v2) {
+  temp <- df2  %>% select(StudyID, Country, Total_N, Age_Mean, AAO_Mean, YBOCST_Mean, Age_Group, Gender_Male_Perc, x)
+                            temp <- temp %>% filter(!is.na(get(x)))
+  if (nrow(temp) >4) {
+  ies.darc <- escalc(xi = get(x), ni = Total_N, measure = "PFT", data=temp)
+  pes.darc <- rma(yi, vi, data=ies.darc, method="DL", weighted=TRUE)
+  infp <- influence(pes.darc)
+  ies.darc <- escalc(xi = get(x), ni = Total_N, measure = "PFT", data=temp[!infp$is.infl,])
+  pes.darc <- rma(yi, vi, data=ies.darc, method="DL", weighted=TRUE)
+
+  metareg.age=rma(yi,vi, data=ies.darc, mods = ~Age_Mean, method="REML")
+  metareg.aao=rma(yi,vi, data=ies.darc, mods = ~AAO_Mean, method="REML")
+  metareg.ybocs=rma(yi,vi, data=ies.darc, mods = ~YBOCST_Mean, method="REML")
+  metareg.sex = rma(yi,vi, data=ies.darc, mods = ~Gender_Male_Perc, method="REML")
+  
+  preds.age = predict(metareg.age, newmods = c(0:100), transf = transf.ipft.hm, targs=list(ni=temp$Total_N))
+  preds.aao = predict(metareg.aao, newmods = c(0:100), transf = transf.ipft.hm, targs=list(ni=temp$Total_N))
+  preds.ybocs = predict(metareg.ybocs, newmods = c(0:100), transf = transf.ipft.hm, targs=list(ni=temp$Total_N))
+  preds.sex = predict(metareg.sex, newmods = c(0:100), transf = transf.ipft.hm, targs=list(ni=temp$Total_N))
+  
+  temp.age <- data.frame(cbind(Comorbidity=rep(df.var2[df.var2$Var == x, "Proper_Name"], times=101), Age_Mean=0:100, data.frame(preds.age)))
+  temp.aao <- data.frame(cbind(Comorbidity=rep(df.var2[df.var2$Var == x, "Proper_Name"], times=101), AAO_Mean=0:100, data.frame(preds.aao)))
+  temp.ybocs <- data.frame(cbind(Comorbidity=rep(df.var2[df.var2$Var == x, "Proper_Name"], times=101), YBOCS_Mean=0:100, data.frame(preds.ybocs)))
+  temp.sex <- data.frame(cbind(Comorbidity=rep(df.var2[df.var2$Var == x, "Proper_Name"], times=101), Male_Perc=0:100, data.frame(preds.sex)))
+  
+  df.metareg.age <- rbind(df.metareg.age, temp.age) %>% filter(!is.na(Comorbidity))
+  df.metareg.aao <- rbind(df.metareg.aao, temp.aao) %>% filter(!is.na(Comorbidity))
+  df.metareg.ybocs <- rbind(df.metareg.ybocs, temp.ybocs) %>% filter(!is.na(Comorbidity))
+  df.metareg.sex <- rbind(df.metareg.sex, temp.sex) %>% filter(!is.na(Comorbidity))
+  }
+      else { writeLines(paste0("Less than 5 studies here, so no meta-regressions!", "\n"))
+        cat("\n")}    
+      
+} 
+
+```
+
+
+```{r age_metareg, fig_width = 10, fig.height=5, results='asis', R.options = list(width = 100)}
+
+age_comorbs <- c("Major Depressive Disorder ", "Generalised Anxiety Disorder", 
+                 "Panic Disorder", "Schizophrenia/Any psychotic disorder", "Any substance use disorder")
+
+df.metareg.age2 <- df.metareg.age %>% filter(Comorbidity %in% age_comorbs)
+df.metareg.age2$Comorbidity <- factor(df.metareg.age2$Comorbidity, 
+                                      levels = c("Major Depressive Disorder ", "Generalised Anxiety Disorder", 
+                                                  "Panic Disorder", "Schizophrenia/Any psychotic disorder", "Any substance use disorder"))
+
+writeLines("<h3> Figure 4. Significant meta-regressions by mean age at assessment of samples </h3>")
+
+cat("\n")
+writeLines("Rates of MDD, Substance Use & Panic Disorder appear to be higher in older samples, whereas rates of Schizophrenia/Psychosis and GAD appear higher in younger samples. (See supplementary figures 3.3 (MDD), 3.6 (Schiz), 3.8 (GAD), 3.10 (Panic), 3.23 (Substance use) for details.)")
+
+ggplot(df.metareg.age2, aes(x=Age_Mean, y=pred, group=Comorbidity)) + 
+  geom_ribbon(aes(ymin= ci.lb, ymax= ci.ub, fill=Comorbidity), alpha=0.2) +  
+  geom_line(aes(x=Age_Mean, y=ci.lb, color=Comorbidity), linetype=5, size=0.1)+ 
+  geom_line(aes(x=Age_Mean, y=ci.ub, color=Comorbidity), linetype=5, size=0.1) + 
+  geom_line(aes(x=Age_Mean, y=pred, color=Comorbidity), size=0.7) + 
+  scale_x_continuous(limits = c(5,60), n.breaks = 10, name="Mean age within sample") +
+  scale_y_continuous(name="Predicted Comorbidity Prevalence") +
+  theme_light() +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank()) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE), colour = guide_legend(nrow = 2, byrow=TRUE)) 
+
+
+
+
+```
+
+
+```{r aao_metareg, fig_width = 10, fig.height=5, results='asis', R.options = list(width = 150)}
+
+aao_comorbs <- c("Any personality disorder", "Generalised Anxiety Disorder", "Agoraphobia",  
+                  "Body dysmorphic disorder", "Oppositional defiant disorder",
+                 "Post-traumatic stress disorder (PTSD)")
+
+df.metareg.aao2 <- df.metareg.aao %>% filter(Comorbidity %in% aao_comorbs)
+df.metareg.aao2$Comorbidity <- factor(df.metareg.aao2$Comorbidity, 
+                                      levels = c("Any personality disorder", "Generalised Anxiety Disorder", "Agoraphobia",  
+                                                  "Body dysmorphic disorder", "Oppositional defiant disorder",
+                                                 "Post-traumatic stress disorder (PTSD)"))
+
+writeLines("<h3> Figure 5. Significant meta-regressions by mean age at onset of OCD in the samples </h3>")
+
+cat("\n")
+writeLines("Rates of GAD, Agoraphobia, ODD, PTSD, BDD are higher in samples with earlier mean age at onset, while rates of personality disorders are higher in samples with later age at onset. For details, see upper right panels of supplementary figures 3.8 (GAD),  3.11 (Agoraphobia), 3.26(ODD), 3.17 (BDD), 3.15 (PTSD), 3.27 (any PD) ")
+
+ggplot(df.metareg.aao2, aes(x=AAO_Mean, y=pred, group=Comorbidity)) + 
+  geom_ribbon(aes(ymin= ci.lb, ymax= ci.ub, fill=Comorbidity), alpha=0.2) +  
+  geom_line(aes(x=AAO_Mean, y=ci.lb, color=Comorbidity), linetype=5, size=0.1)+ 
+  geom_line(aes(x=AAO_Mean, y=ci.ub, color=Comorbidity), linetype=5, size=0.1) + 
+  geom_line(aes(x=AAO_Mean, y=pred, color=Comorbidity), size=0.7) + 
+  scale_x_continuous(limits = c(0,40), n.breaks = 10, name="Mean AAO within sample") +
+  scale_y_continuous(name="Predicted Comorbidity Prevalence") + 
+  theme_light() +
+  scale_color_brewer(palette = "Dark2", direction=-1) + 
+  scale_fill_brewer(palette = "Dark2", direction = -1) +
+  theme(legend.position="bottom", legend.title=element_blank()) +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE), colour = guide_legend(nrow = 2, byrow=TRUE))
+
+
+```
+
+
+```{r ybocs_metareg, fig_width = 10, fig.height=5, results='asis', R.options = list(width = 150)}
+
+YBOCS_comorbs <- c("Panic Disorder", "Any obsessive compulsive related (spectrum) disorders", "Any tic disorder",  
+                  "Anorexia nervosa", "Obsessive compulsive (Anankastic) personality disorder")
+
+df.metareg.ybocs2 <- df.metareg.ybocs %>% filter(Comorbidity %in% YBOCS_comorbs)
+df.metareg.ybocs2$Comorbidity <- factor(df.metareg.ybocs2$Comorbidity, 
+                                      levels = c("Panic Disorder", "Any obsessive compulsive related (spectrum) disorders", 
+                                                 "Any tic disorder", "Anorexia nervosa", 
+                                                 "Obsessive compulsive (Anankastic) personality disorder"))
+
+writeLines("<h3> Figure 6. Significant meta-regressions by mean YBOCS or CYBOCS total score in the samples </h3>")
+
+cat("\n")
+writeLines("The prevalence rates of all the panic disorer, OCRDs, tic disorder, anorexia nervosa & OCPD are lower in samples with higher illness severity. See bottom left panels of supplementary figures 3.10 (Panic), 3.16 (OCRDs), 3.19 (tic disorders), 3.21 (anorexia), 3.28 (OCPD) for details")
+
+ggplot(df.metareg.ybocs2, aes(x=YBOCS_Mean, y=pred, group=Comorbidity)) + 
+  geom_ribbon(aes(ymin= ci.lb, ymax= ci.ub, fill=Comorbidity), alpha=0.2) +  
+  geom_line(aes(x=YBOCS_Mean, y=ci.lb, color=Comorbidity), linetype=5, size=0.1)+ 
+  geom_line(aes(x=YBOCS_Mean, y=ci.ub, color=Comorbidity), linetype=5,size=0.1) + 
+  geom_line(aes(x=YBOCS_Mean, y=pred, color=Comorbidity), size=0.7) + 
+  scale_x_continuous(limits = c(0,40), n.breaks = 10, name="Mean YBOCS Total Score within sample") +
+  scale_y_continuous(name="Predicted Comorbidity Prevalence") + 
+  theme_light() +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  theme(legend.position="bottom", legend.justification = "center", legend.title=element_blank()) +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE), colour = guide_legend(nrow = 2, byrow=TRUE)) 
+
+
+
+```
+
+
+```{r gender_metareg, fig_width = 10, fig.height=5, results='asis', R.options = list(width = 150)}
+
+sex_comorbs <- c("Any psychiatric comorbidity", "Bipolar Disorder", "Schizophrenia/Any psychotic disorder",  
+                  "Agoraphobia", "Simple/Specific Phobia", 
+                 "Attention deficit hyperactivity disorder", 
+                 "Oppositional defiant disorder")
+
+df.metareg.sex2 <- df.metareg.sex %>% filter(Comorbidity %in% sex_comorbs)
+df.metareg.sex2$Comorbidity <- factor(df.metareg.sex2$Comorbidity, 
+                                      levels = sex_comorbs)
+
+writeLines("<h3> Figure 7. Significant meta-regression by percentage of males within sample </h3>")
+cat("\n")
+writeLines("The prevalence rates of any psychiatric illness, oppositional defiant disorder are higher in samples with higher % of males. Bipolar disorder, Schizophrenia, ADHD also appear to show a similar trend.")
+
+ggplot(df.metareg.sex2, aes(x=Male_Perc, y=pred, group=Comorbidity)) + 
+  geom_ribbon(aes(ymin= ci.lb, ymax= ci.ub, fill=Comorbidity), alpha=0.2) +  
+  geom_line(aes(x=Male_Perc, y=ci.lb, color=Comorbidity), linetype=5, size=0.1)+ 
+  geom_line(aes(x=Male_Perc, y=ci.ub, color=Comorbidity), linetype=5, size=0.1) + 
+  geom_line(aes(x=Male_Perc, y=pred, color=Comorbidity), size=0.7) + 
+  scale_x_continuous(limits = c(30,70), n.breaks = 10, name="% Male Gender within sample") +
+  scale_y_continuous(name="Predicted Comorbidity Prevalence") + 
+  theme_light() +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank()) +
+  scale_color_brewer(palette = 6, type="qual" ) + 
+  scale_fill_brewer(palette = 6, type="qual" ) +
+  guides(fill=guide_legend(nrow=3,byrow=TRUE), colour = guide_legend(nrow = 3, byrow=TRUE)) 
+
+
+```
