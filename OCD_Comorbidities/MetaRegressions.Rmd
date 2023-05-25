@@ -1,0 +1,140 @@
+---
+title: "OCD Comorbidity Meta-analysis: Across the Lifespan"
+author: "Sharma E et al."
+date: "26/07/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r packages, include=FALSE}
+library(dplyr)
+library(kableExtra)
+library(metafor)
+library(meta)
+library(weightr)
+```
+
+
+```{r input, include=FALSE}
+
+df <- read.csv("Eesha OCD Comorb.csv")
+
+df2 <- df %>% filter(Recruitment_Type != "Community") %>% select(StudyID, Country, Design, Total_N, Age_Mean, Age_Group, AAO_Mean, YBOCST_Mean, Instrument, Gender_Male_Perc, 29:218)  # Select only the important columns
+
+df2$Age_Group <- factor(df2$Age_Group, levels = c("Pediatric", "Adult"))
+
+df.var <- read.csv("Var_Names.csv") # this is a file with better labels for each disorder
+df.var$No <- 1:nrow(df.var)
+
+df.var2 <- read.csv("Var_Included.csv") # file with only the disorders we're analyzing
+df.var2$No <- 1:nrow(df.var2)
+
+v1 <- sapply(df.var$Var, as.character) # a character vector, useful for running for running the analysis in loops
+v2 <- sapply(df.var2$Var, as.character)
+
+```
+
+
+```{r metaregfunc, echo=F}
+
+metaregfunc <- function(x) {temp <- df2  %>% select(StudyID, Country, Total_N, Age_Mean, AAO_Mean, YBOCST_Mean, Age_Group, Gender_Male_Perc, x)
+                          temp <- temp %>% filter(!is.na(get(x)))
+
+                          if (nrow(temp) >4) {
+                             cat(paste0("<h3>" ,"Suppl Figure 3.", df.var2[df.var2$Var == x, "No"]," Meta-regression plots for ",
+                                                               df.var2[df.var2$Var == x, "Proper_Name"], "</h3>"))
+                                 ies.darc <- escalc(xi = get(x), ni = Total_N, measure = "PFT", data=temp)
+                                 pes.darc <- rma(yi, vi, data=ies.darc, method="DL", weighted=TRUE)
+                                 infp <- influence(pes.darc)
+
+                                  wi=1/sqrt(ies.darc$vi)
+                                  size=1+3*(wi - min(wi))/(max(wi) - min(wi))
+                                  
+                                  metareg.age=rma(yi,vi, data=ies.darc, mods = ~Age_Mean, method="REML")
+                                  metareg.aao=rma(yi,vi, data=ies.darc, mods = ~AAO_Mean, method="REML")
+                                  metareg.ybocs=rma(yi,vi, data=ies.darc, mods = ~YBOCST_Mean, method="REML")
+                                  metareg.sex = rma(yi,vi, data=ies.darc, mods = ~Gender_Male_Perc, method="REML")
+                                  
+                                  preds.age = predict(metareg.age, newmods = c(0:100), transf = transf.ipft.hm, targs=list(ni=temp$Total_N))
+                                  preds.aao = predict(metareg.aao, newmods = c(0:100), transf = transf.ipft.hm, targs=list(ni=temp$Total_N))
+                                  preds.ybocs = predict(metareg.ybocs, newmods = c(0:100), transf = transf.ipft.hm, targs=list(ni=temp$Total_N))
+                                  preds.sex = predict(metareg.sex, newmods = c(0:100), transf = transf.ipft.hm, targs=list(ni=temp$Total_N))
+                                  
+                                  palette(c("red", "blue"))
+                                  par(mfrow=c(2,2))
+                                  cat("\n")
+                                  
+                                  plot(ies.darc$Age_Mean, transf.ipft.hm(ies.darc$yi, targs = list(ni=temp$Total_N)), 
+                                       cex=size, pch=1, col = ies.darc$Age_Group,
+                                       xlab="Mean Age at Assessment of the sample", 
+                                       ylab = "Proportion", las=1, 
+                                       main="Metaregression by Mean Age at Assessment of the sample",
+                                       sub = paste0("QM = ", round(metareg.age$QM, 3) , "   p-value = ", round(metareg.age$QMp, 3))) + 
+                                    lines(0:100, preds.age$pred) + 
+                                    lines(0:100, preds.age$ci.lb, lty="dashed") + 
+                                    lines(0:100, preds.age$ci.ub, lty="dashed")
+
+                                   plot(ies.darc$AAO_Mean, transf.ipft.hm(ies.darc$yi, targs = list(ni=temp$Total_N)), 
+                                       cex=size, pch=1, col = ies.darc$Age_Group,
+                                       xlab="Mean Age at Onset of the sample", 
+                                       ylab = "Proportion", las=1, 
+                                       main="Metaregression by mean age at onset of OCD",
+                                       sub = paste0("QM = ", round(metareg.aao$QM, 3) , "   p-value = ", round(metareg.aao$QMp, 3))) + 
+                                    lines(0:100, preds.aao$pred) + 
+                                    lines(0:100, preds.aao$ci.lb, lty="dashed") + 
+                                    lines(0:100, preds.aao$ci.ub, lty="dashed")
+                                  
+                                   plot(ies.darc$YBOCST_Mean, transf.ipft.hm(ies.darc$yi, targs = list(ni=temp$Total_N)), 
+                                       cex=size, pch=1, col = ies.darc$Age_Group,
+                                       xlab="Mean YBOCS Total Score", 
+                                       ylab = "Proportion", las=1, 
+                                       main="Metaregression by mean YBOCS total score",
+                                       sub = paste0("QM = ", round(metareg.ybocs$QM, 3) , "   p-value = ", round(metareg.ybocs$QMp, 3))) + 
+                                    lines(0:100, preds.ybocs$pred) + 
+                                    lines(0:100, preds.ybocs$ci.lb, lty="dashed") + 
+                                    lines(0:100, preds.ybocs$ci.ub, lty="dashed")
+                                  
+                                   plot(ies.darc$Gender_Male_Perc, transf.ipft.hm(ies.darc$yi, targs = list(ni=temp$Total_N)), 
+                                       cex=size, pch=1, col = ies.darc$Age_Group,
+                                       xlab="Percentage Male Gender within sample", 
+                                       ylab = "Proportion", las=1, 
+                                       main="Metaregression by % male gender within sample",
+                                       sub = paste0("QM = ", round(metareg.sex$QM, 3) , "   p-value = ", round(metareg.sex$QMp, 3))) + 
+                                    lines(0:100, preds.sex$pred) + 
+                                    lines(0:100, preds.sex$ci.lb, lty="dashed") + 
+                                    lines(0:100, preds.sex$ci.ub, lty="dashed")
+                                  cat("\n")}
+                           else { writeLines(paste0("Less than 5 studies here, so no meta-regressions!", "\n"))
+                                  cat("\n")}    
+                                  writeLines(paste0("<h2>--------------------------------------------------------------------------------------</h2>", "\n"))
+                                 }
+```
+
+
+``` {r dummy, include=FALSE}
+# This is just a dummy piece of code to take care of some annoying error messages!
+metaregfunc("Any_AxisI_Life")
+
+```
+
+# ---------------------------------------------------------------------------------------------------------
+
+## Meta-regression plots for each disorder
+
+## \n \n
+
+#### Each circle represents a study sample. Blue indicates sample drawn from an adult OCD study; red indicates a pediatric OCD sample. \n
+#### The size of the circle is proportional to the sample size of that study \n
+#### The solid line is the meta-regression line,the dotted lines are the 95% confidence intervals \n
+#### The QM statistic (& its p-value) is the statistical test for heterogeneity explained by the meta-regressor \n
+
+## --------------------------------------------------------------------------------------------------------
+
+
+``` {r supptables, results='asis', R.options = list(width = 100), fig.height=10, fig.width=10}
+# Making all the meta-regressions, the easiest possible way!
+for (i in v2) {metaregfunc(i)}
+```
