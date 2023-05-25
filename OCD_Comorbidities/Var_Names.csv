@@ -1,0 +1,96 @@
+No,Var,Proper_Name,Category
+1,Any_AxisI_Life,Any Psychiatric Axis I comorbidity lifetime,All
+2,Any_AxisI_Curr,Any Psychiatric Axis I comorbidity current,All
+3,Any_mood_Life,Any mood disorders lifetime,Mood
+4,Any_mood_Curr,Any mood disorders current,Mood
+5,MDD_Life,Major depression lifetime,Mood
+6,MDD_Curr,Major depression current,Mood
+7,Dysthymia_Life,Dysthymia lifetime,Mood
+8,Dysthymia_Curr,Dysthymia current,Mood
+9,Bipolar_Life,Bipolar disorder lifetime,Mood
+10,Bipolar_Curr,Bipolar disorder current,Mood
+11,Mania_Life,Mania/hypomania lifetime,Mood
+12,Mania_Curr,Mania/hypomania current,Mood
+13,Any_Anx_Life,Any Anxiety disorders lifetime,Anxiety
+14,Any_Anx_Curr,Any Anxiety disorders current,Anxiety
+15,GAD_Life,Generalised anxiety disorder lifetime,Anxiety
+16,GAD_Curr,Generalised anxiety disorder current,Anxiety
+17,SAD_Life,Social anxiety disorder lifetime,Anxiety
+18,SAD_Curr,Social anxiety disorder current,Anxiety
+19,Panic_Life,Panic disorder lifetime,Anxiety
+20,Panic_Curr,Panic disorder current,Anxiety
+21,Agoraph_Life,Agoraphobia lifetime,Anxiety
+22,Agoraph_Curr,Agoraphobia current,Anxiety
+23,Phobia_Life,Simple phobia lifetime,Anxiety
+24,Phobia_Curr,Simple phobia current,Anxiety
+25,Somat_Life,Somatic symptom disorders/ Somatisation/ Somatoform disorders lifetime,Somatic
+26,Somat_Curr,Somatic symptom disorders/ Somatisation/ Somatoform disorders current,Somatic
+27,Hypoch_Life,Hypochondriasis / Illness anxiety disorder lifetime,Somatic
+28,Hypoch_Curr,Hypochondriasis / Illness anxiety disorder current,Somatic
+29,Any_Tic_Life,Any Tic disorder lifetime,Neurodevelopmental
+30,Any_Tic_Curr,Any Tic disorder current,Neurodevelopmental
+31,Tourette_Life,Tourette syndrome lifetime,Neurodevelopmental
+32,Tourette_Curr,Tourette syndrome current,Neurodevelopmental
+33,ASD_Life,Autism spectrum disorder lifetime,Neurodevelopmental
+34,ASD_Curr,Autism spectrum disorder current,Neurodevelopmental
+35,ADHD_Life,Attention deficit hyperactivity disorder lifetime,Neurodevelopmental
+36,ADHD_Curr,Attention deficit hyperactivity disorder current,Neurodevelopmental
+37,ODD_Life,Oppositional defiant disorder lifetime,Neurodevelopmental
+38,ODD_Curr,Oppositional defiant disorder current,Neurodevelopmental
+39,Any_OCRD_Life,Any obsessive compulsive related (spectrum) disorders lifetime,OCRD
+40,Any_OCRD_Curr,Any obsessive compulsive related (spectrum) disorders current,OCRD
+41,BDD_Life,Body dysmorphic disorder lifetime,OCRD
+42,BDD_Curr,Body dysmorphic disorder current,OCRD
+43,TTM_Life,Trichotillomania lifetime,OCRD
+44,TTM_Curr,Trichotillomania current,OCRD
+45,HD_Life,Hoarding disorder lifetime,OCRD
+46,HD_Curr,Hoarding disorder current,OCRD
+47,SPD_Life,Skin-picking disorder lifetime,OCRD
+48,SPD_Curr,Skin-picking disorder current,OCRD
+49,ORS_Life,Olfactory reference syndrome lifetime,OCRD
+50,ORS_Curr,Olfactory reference syndrome current,OCRD
+51,Psychosis_Life,Psychotic disorders lifetime,Psychosis
+52,Psychosis_Curr,Psychotic disorders current,Psychosis
+53,Schiz_Life,Schizophrenia lifetime,Psychosis
+54,Schiz_Curr,Schizophrenia current,Psychosis
+55,Any_Eating_Life,Any Eating disorders lifetime,Eating
+56,Any_Eating_Curr,Any Eating disorders current,Eating
+57,Anorexia_Life,Anorexia nervosa lifetime,Eating
+58,Anorexia_Curr,Anorexia nervosa current,Eating
+59,Bulemia_Life,Bulimia nervosa lifetime,Eating
+60,Bulemia_Curr,Bulimia nervosa current,Eating
+61,Any_Subs_Life,Any Substance use disorders lifetime,Addictions
+62,Any_Subs_Curr,Any Substance use disorders current,Addictions
+63,Alcohol_Life,Alcohol use disorders lifetime,Addictions
+64,Alcohol_Curr,Alcohol use disorders current,Addictions
+65,Internet_Gaming_Life,Internet gaming disorder lifetime,Addictions
+66,Internet_Gaming_Curr,Internet gaming disorder current,Addictions
+67,Compulsive_Sexual_Life,Compulsive sexual behaviour disorder lifetime,Addictions
+68,Compulsive_Sexual_Curr,Compulsive sexual behaviour disorder current,Addictions
+69,Compulsive_Buying_Life,Compulsive buying lifetime,Addictions
+70,Compulsive_Buying_Curr,Compulsive buying current,Addictions
+71,Gambling_Life,Gambling disorder lifetime,Addictions
+72,Gambling_Curr,Gambling disorder current,Addictions
+73,Internet_Use_Life,Problematic internet use lifetime,Addictions
+74,Internet_Use_Curr,Problematic internet use current,Addictions
+75,PTSD_Life,Post-traumatic stress disorder (PTSD) lifetime,Trauma
+76,PTSD_Curr,Post-traumatic stress disorder (PTSD) current,Trauma
+77,Any_AxisII,Any personality (Axis II) disorder,Personality
+78,ObsCompPD,Obsessive compulsive (Anankastic) personality disorder,Personality
+79,SchizoidPD,Schizoid personality disorder,Personality
+80,SchizotypalPD,Schizotypal personality disorder,Personality
+81,BorderlinePD,Borderline personality disorder,Personality
+82,HistrionicPD,Histrionic personality disorder,Personality
+83,AntisocialPD,Antisocial personality disorder,Personality
+84,NarcicissticPD,Narcissistic personality disorder,Personality
+85,DependentPD,Dependent personality disorder,Personality
+86,AnxAvoidPD,Anxious-avoidant personality disorder,Personality
+87,MixedPD,Mixed personality disorder,Personality
+88,ClustA_PD,Cluster A personality disorders,Personality
+89,ClustB_PD,Cluster B personality disorders,Personality
+90,ClustC_PD,Cluster C personality disorders,Personality
+91,Cardiovasc,Cardiovascular disorders,General Medical
+92,Diabetes,Diabetes,General Medical
+93,Obesity,Obesity,General Medical
+94,HTN,Hypertension,General Medical
+95,MetabolicSyn,Metabolic syndrome,General Medical

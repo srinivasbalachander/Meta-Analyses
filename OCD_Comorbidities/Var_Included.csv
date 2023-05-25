@@ -1,0 +1,37 @@
+No,Var,Proper_Name,Category
+1,Any_AxisI_Life,Any psychiatric comorbidity,All
+2,Any_mood_Life,Any mood disorder,Mood
+3,MDD_Life,Major Depressive Disorder ,Mood
+4,Dysthymia_Life,Dysthymia,Mood
+5,Bipolar_Life,Bipolar Disorder,Mood
+6,Psychosis_Life,Schizophrenia/Any psychotic disorder,Psychosis
+7,Any_Anx_Life,Any anxiety disorder,Anxiety
+8,GAD_Life,Generalised Anxiety Disorder,Anxiety
+9,SAD_Life,Social Anxiety Disorder,Anxiety
+10,Panic_Life,Panic Disorder,Anxiety
+11,Agoraph_Life,Agoraphobia,Anxiety
+12,Phobia_Life,Simple/Specific Phobia,Anxiety
+13,Somat_Life,Somatic symptom disorder/Somatoform/Somatization disorder,Somatic
+14,Hypoch_Life,Hypochondriasis/Illness anxiety disorder,Somatic
+15,PTSD_Life,Post-traumatic stress disorder (PTSD),Trauma-related
+16,Any_OCRD_Life,Any obsessive compulsive related (spectrum) disorders,OCRD
+17,BDD_Life,Body dysmorphic disorder,OCRD
+18,TTM_Life,Trichotillomania,OCRD
+19,Any_Tic_Life,Any tic disorder,OCRD
+20,Any_Eating_Life,Any eating disorder,Eating
+21,Anorexia_Life,Anorexia nervosa,Eating
+22,Bulemia_Life,Bulimia nervosa,Eating
+23,Any_Subs_Life,Any substance use disorder,Addictions
+24,ASD_Life,Autism spectrum disorder,Neurodevelopmental
+25,ADHD_Life,Attention deficit hyperactivity disorder,Neurodevelopmental
+26,ODD_Life,Oppositional defiant disorder,Neurodevelopmental
+27,Any_AxisII,Any personality disorder,Personality
+28,ObsCompPD,Obsessive compulsive (Anankastic) personality disorder,Personality
+29,SchizoidPD,Schizoid personality disorder,Personality
+30,SchizotypalPD,Schizotypal personality disorder,Personality
+31,BorderlinePD,Borderline personality disorder,Personality
+32,HistrionicPD,Histrionic personality disorder,Personality
+33,AntisocialPD,Antisocial personality disorder,Personality
+34,NarcicissticPD,Narcissistic personality disorder,Personality
+35,DependentPD,Dependent personality disorder,Personality
+36,AnxAvoidPD,Anxious-avoidant personality disorder,Personality
