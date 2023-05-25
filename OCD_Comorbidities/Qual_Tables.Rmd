@@ -1,0 +1,118 @@
+---
+title: "OCD Comorbidity Meta-analysis: Across the Lifespan"
+author: "Sharma E et al"
+date: "26/07/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r packages, include=FALSE}
+library(dplyr)
+library(kableExtra)
+library(metafor)
+library(meta)
+library(weightr)
+```
+
+
+```{r input, include=FALSE}
+
+round2 <- function(x) {round(x, digits=1)} #Make a small function to round off digits to 1 (As these are only the descriptive tables)
+
+df <- read.csv("Eesha OCD Comorb.csv")
+
+df2 <- df %>% filter(Recruitment_Type != "Community") %>% select(StudyID, Country, Design, Total_N, 
+                                                                 Age_Mean, Age_Group, AAO_Mean, 
+                                                                 YBOCST_Mean, Instrument, Gender_Male_Perc, 29:218) %>% mutate_if(is.numeric, round2)  # Select only the important columns, round off to 1 decimal for everything 
+
+df2$Age_Group <- factor(df2$Age_Group, levels = c("Pediatric", "Adult"))
+
+df.var <- read.csv("Var_Names.csv") # this is a file with better labels for each disorder
+df.var$No <- 1:nrow(df.var)
+
+df.var2 <- read.csv("Var_Included.csv") # File with only the disorders that we're analyzing this time
+df.var2$No <- 1:nrow(df.var2)
+
+v1 <- sapply(df.var$Var, as.character) # a character vector, useful for running for loops
+v2 <- sapply(df.var2$Var, as.character)
+
+```
+
+
+```{r metafunction, echo=F}
+
+# This is my masterpiece: A customized function for making tables, with descriptives and summaries!!
+
+metafunc <- function(x) {writeLines(paste0("<h3>Suppl Table ", 
+                                            df.var2[df.var2$Var == x, "No"],". ",
+                                            df.var2[df.var2$Var == x, "Proper_Name"],"</h3>"))
+                          temp <- df2  %>% select(StudyID, Country, Total_N, Age_Mean, AAO_Mean, Age_Group, Gender_Male_Perc, YBOCST_Mean, Instrument, x)
+                          temp <- temp %>% filter(!is.na(get(x)))
+                          writeLines(paste0("-----------------------------------------", "\n"))
+                          writeLines(paste0("Total number of studies that reported ", df.var2[df.var2$Var == x, "Proper_Name"], " = ", nrow(temp), "\n"))
+                          writeLines(paste0("Number of pediatric studies that reported ", df.var2[df.var2$Var == x, "Proper_Name"], " = ", nrow(temp[temp$Age_Group == "Pediatric",]), "\n"))
+                          if(nrow(temp) != 0) {
+                          writeLines(paste0("Total N of OCD cases in studies that reported ", df.var2[df.var2$Var == x, "Proper_Name"], " = ", sum(temp$Total_N), "\n"))
+                          writeLines(paste0("Total cases of ", df.var2[df.var2$Var == x, "Proper_Name"], " = ", sum(select(temp, x), na.rm = T), "\n"))
+                          writeLines(paste0("-----------------------------------------", "\n"))
+                          temp$No <- 1:nrow(temp)
+                          temp <- temp %>% select(No, StudyID, Country, Total_N, Age_Mean, AAO_Mean, Age_Group, Gender_Male_Perc, YBOCST_Mean, Instrument, x)
+                          temp2 <- temp
+                          temp2$Perc <- round(select(temp, x)*100/select(temp, Total_N), digits = 1)
+                          colnames(temp2) <- c("No", "Study", "Country", "Total OCD Subjects", "Mean Age", "Mean AAO", "Age Group", "% Males", "Mean (C)YBOCS-T","Diagnostic Instrument", x, paste0(x, " %"))
+                          print(temp2 %>% kable(align= 'c', padding=4) %>% kable_styling(full_width = T))
+                          cat("\n\n")
+                          } else {writeLines("No studies here, move on!")
+                                  writeLines(paste0("-----------------------------------------", "\n"))
+                                  cat("\n")}
+                          writeLines(paste0("</h3> ------------------------------------------------------------------------- </h3>"))
+                          cat("\n")
+                          cat("\n")
+                            }
+```
+
+``` {r dummy, include=FALSE}
+# This is just a dummy piece of code to take care of some annoying error messages!
+metafunc("Any_AxisI_Life")
+
+```
+
+# ------------------------------------------------------------------------------------------
+
+## Supplementary tables describing studies included in the meta-analysis for each comorbidity
+
+#### ------------------------------------------------------------------------------------
+
+#### Abbreviations used:
+
+OCD - Obsessive-Compulsive Disorder; 
+\n
+AAO - Age at Onset of OCD; 
+\n
+(C)YBOCS-T - (Childhood) Yale-Brown Obsessive-Compulsive Scale Total Score; 
+\n
+MINI - Mini International Neuropsychiatric Interview; 
+\n
+SCID - Structured Clinical Interview for DSM; 
+\n
+ADIS - Anxiety Disorders Interview Schedule; 
+\n
+SADS - Schedule for affective Disorders and Schizophrenia; 
+\n
+K-SADS - Kidddie-SADS; 
+\n
+DIS - Diagnostic Interview Schedule
+
+#### ------------------------------------------------------------------------------------
+
+``` {r supptables, results='asis', R.options = list(width = 100)}
+# Making all the tables, the easiest possible way!
+
+
+for (i in v2) {metafunc(i)}
+```
+
+# ------------------------------------------------------------------------------------------
