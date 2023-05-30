@@ -1,36 +1,31 @@
 # Umesh's Network Meta-Analysis
 
+library(googlesheets4)
 library(readxl)
 library(netmeta)
 library(dmetar)
 library(rgl)
 library(colorspace)
 
-
 rm(list=ls())
 
+gs4_auth()
+
 # Read the dataset and the labels
-df.wide <- read.csv("UMESHNMAWIDE.csv")
-labels <- read_excel("THERAPYLABELNMA.xlsx")
+
+df.long <- read_sheet("https://docs.google.com/spreadsheets/d/1qDLFM_8M6YJCjwqCdSxT4kpZ1Lgi0iORP9lCEOU0ZP0/edit?usp=sharing", 
+                      sheet = 1)
 
 # Prepare the data for frequentist NMA
-df.nm <- pairwise(list(T.1, T.2, T.3, T.4, T.5),
-               n = list(N.1, N.2, N.3, N.4, N.5),
-               mean = list(Mean.1, Mean.2, Mean.3, Mean.4, Mean.5), 
-               sd = list(SD.1, SD.2, SD.3, SD.4, SD.5),
-               data = df.wide, 
-               studlab = Study)
- 
+df.nm <- pairwise(treat = Treatment,
+                  n = N,
+                  mean = Mean, 
+                  sd = SD,
+                  data = df.long, 
+                  studlab = Study)
+
 df.nm <- df.nm[, 1:11]
 
-# Relabeling the treatment arms
-df.nm[c("treat1", "treat2")] <- lapply(df.nm[c("treat1", "treat2")],
-                                       function(x) labels$Label[match(x, labels$Number)])
-
-# Look at number of studies for each intervention/node
-k.nodes <- data.frame(table(c(df.nm$treat1, df.nm$treat2)))
-colnames(k.nodes) <- c("Intervention", "Number of Studies")
-k.nodes
 
 # Model Fitting
 
@@ -51,6 +46,8 @@ m.netmeta <- netmeta(TE = TE,
 
 summary(m.netmeta)
 
+data.frame(m.netmeta$k.trts)
+
 decomp.design(m.netmeta)
 
 
@@ -69,11 +66,8 @@ netgraph(m.netmeta,
          points.max = 12,
          points.min = 4,
          # srt.labels = "orthogonal",  # In case you want to rotate the labels
-         iterate = FALSE
-         )
+         iterate = FALSE)
 
-
-?netgraph.netmeta
 
 netgraph(m.netmeta, dim = "3d",
          points = TRUE)
@@ -91,7 +85,6 @@ forest(m.netmeta,
        drop.reference.group = TRUE,
        label.left = "Favors Intervention",
        label.right = "Favors Care As Usual")
-
 
 
 # Direct versus Indirect Evidence Plot
